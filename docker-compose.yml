@@ -1,0 +1,52 @@
+version: '3.8'
+services:
+  frontend:
+    build: ./frontend
+    # ...
+    ports:
+    - 3000:3000
+    restart: 'always'
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "lsof", "-t", "-i:3000"]
+      timeout: 10s
+      retries: 5
+  backend:
+    ports:
+    - 3001:3001
+    build: ./backend
+    restart: 'always'
+    # ...
+    depends_on:
+      - db
+    environment:
+      - PORT=3001
+
+      # Os dados abaixo se referem ao container `db`
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD", "lsof", "-t", "-i:3001"]
+      timeout: 10s
+      retries: 5
+  db:
+    image: mysql:8.0.21
+    container_name: db
+    ports:
+      - 3306:3306
+    environment:
+      - MYSQL_DATABASE=${DB_NAME}
+      - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
+      - MYSQL_USER=${DB_USER}
+    restart: 'always'
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      timeout: 10s
+      retries: 5
